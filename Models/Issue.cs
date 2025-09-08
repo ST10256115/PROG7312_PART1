@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using MunicipalServicesApp.DataStructures;
 
 namespace MunicipalServicesApp.Models
 {
@@ -21,7 +21,9 @@ namespace MunicipalServicesApp.Models
         public string Location { get; set; } = "";
         public IssueCategory Category { get; set; }
         public string Description { get; set; } = "";
-        public List<string> Attachments { get; set; } = new List<string>();
+
+        // Custom-built data structure instead of List<string>
+        public DynamicArray<string> Attachments { get; set; } = new DynamicArray<string>();
 
         public ContactChannel PreferredChannel { get; set; } = ContactChannel.InApp;
         public string PhoneNumber { get; set; } = "";

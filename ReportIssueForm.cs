@@ -1,9 +1,9 @@
 ﻿using MunicipalServicesApp.Data;
+using MunicipalServicesApp.DataStructures; // <-- custom DynamicArray<T>
 using MunicipalServicesApp.Models;
 using System;
 using System.Drawing;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -44,9 +44,13 @@ namespace MunicipalServicesApp
             Text = "Report an Issue";
             StartPosition = FormStartPosition.CenterParent;
 
-            // Populate combo
+            // Populate category dropdown
             this.cboCategory.DataSource = Enum.GetValues(typeof(IssueCategory));
+
+            // Engagement / UX hint
             this.lblTip.Text = "Tip: Clear details and a photo help faster resolution.";
+
+            // Default channel
             this.rbInApp.Checked = true;
         }
 
@@ -131,7 +135,7 @@ namespace MunicipalServicesApp
             this.btnAttach.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             this.btnAttach.Click += new EventHandler(this.btnAttach_Click);
 
-            // Contact group (engagement strategy)
+            // Contact group
             this.grpContact.Text = "Preferred Contact Channel";
             this.grpContact.Location = new Point(23, 395);
             this.grpContact.Size = new Size(450, 90);
@@ -148,7 +152,6 @@ namespace MunicipalServicesApp
             this.txtPhone.Location = new Point(15, 55);
             this.txtPhone.Size = new Size(410, 24);
             this.txtPhone.Text = "";
-
             var lblPhone = new Label();
             lblPhone.Text = "Phone (for SMS/WhatsApp):";
             lblPhone.Location = new Point(15, 40);
@@ -210,9 +213,9 @@ namespace MunicipalServicesApp
 
                 if (dlg.ShowDialog(this) == DialogResult.OK)
                 {
-                    foreach (var path in dlg.FileNames)
+                    for (int i = 0; i < dlg.FileNames.Length; i++)
                     {
-                        this.lstFiles.Items.Add(path);
+                        this.lstFiles.Items.Add(dlg.FileNames[i]);
                     }
                     this.lblTip.Text = "Nice! Attachments added.";
                 }
@@ -242,8 +245,24 @@ namespace MunicipalServicesApp
             issue.Location = this.txtLocation.Text.Trim();
             issue.Category = (IssueCategory)this.cboCategory.SelectedItem;
             issue.Description = this.rtbDescription.Text.Trim();
-            issue.Attachments = this.lstFiles.Items.Cast<object>()
-                                   .Select(x => x.ToString()).ToList();
+
+            // Build attachments with custom DynamicArray<string>
+            var attachments = new DynamicArray<string>();
+            for (int i = 0; i < this.lstFiles.Items.Count; i++)
+            {
+                object obj = this.lstFiles.Items[i];
+                if (obj != null)
+                {
+                    string path = obj.ToString();
+                    if (!string.IsNullOrEmpty(path))
+                    {
+                        attachments.Add(path);
+                    }
+                }
+            }
+            issue.Attachments = attachments;
+
+            // Channel & phone
             issue.PreferredChannel =
                 this.rbSMS.Checked ? ContactChannel.SMS :
                 (this.rbWhatsApp.Checked ? ContactChannel.WhatsApp : ContactChannel.InApp);
@@ -254,21 +273,24 @@ namespace MunicipalServicesApp
             this.lblTip.Text = "Submitting… please wait.";
 
             // Copy attachments into app folder (demo only)
-            var saveDir = Path.Combine(Directory.GetCurrentDirectory(),
-                                       "Attachments", issue.Id.ToString());
+            string saveDir = Path.Combine(Directory.GetCurrentDirectory(), "Attachments", issue.Id.ToString());
             Directory.CreateDirectory(saveDir);
-            foreach (var file in issue.Attachments)
+
+            foreach (string file in issue.Attachments) // IEnumerable<T> supported
             {
                 try
                 {
-                    var fileName = Path.GetFileName(file);
-                    if (fileName != null)
+                    string fileName = Path.GetFileName(file);
+                    if (!string.IsNullOrEmpty(fileName))
                     {
-                        var dest = Path.Combine(saveDir, fileName);
+                        string dest = Path.Combine(saveDir, fileName);
                         if (File.Exists(file)) File.Copy(file, dest, true);
                     }
                 }
-                catch { /* ignore copy errors for demo */ }
+                catch
+                {
+                    // ignore copy errors for demo
+                }
             }
             this.pbSubmit.Value = 60;
 
@@ -294,7 +316,7 @@ namespace MunicipalServicesApp
         private void ClearForm()
         {
             this.txtLocation.Clear();
-            this.cboCategory.SelectedIndex = 0;
+            if (this.cboCategory.Items.Count > 0) this.cboCategory.SelectedIndex = 0;
             this.rtbDescription.Clear();
             this.lstFiles.Items.Clear();
             this.rbInApp.Checked = true;
