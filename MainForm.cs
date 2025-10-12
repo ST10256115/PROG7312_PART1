@@ -8,10 +8,10 @@ namespace MunicipalServicesApp
     public class MainForm : Form
     {
         // Color palette
-        private static readonly Color Primary = Color.FromArgb(0, 102, 84);   // deep green
+        private static readonly Color Primary = Color.FromArgb(0, 102, 84);
         private static readonly Color PrimaryDark = Color.FromArgb(0, 82, 68);
-        private static readonly Color Accent = Color.FromArgb(255, 179, 0);   // gold
-        private static readonly Color Surface = Color.FromArgb(245, 247, 250); // light bg
+        private static readonly Color Accent = Color.FromArgb(255, 179, 0);
+        private static readonly Color Surface = Color.FromArgb(245, 247, 250);
         private static readonly Color TextBody = Color.FromArgb(33, 37, 41);
 
         private Panel header;
@@ -36,11 +36,7 @@ namespace MunicipalServicesApp
             BackColor = Surface;
 
             // ===== Header (light gradient) =====
-            header = new Panel
-            {
-                Dock = DockStyle.Top,
-                Height = 120
-            };
+            header = new Panel { Dock = DockStyle.Top, Height = 120 };
             header.Paint += Header_Paint;
 
             lblTitle = new Label
@@ -67,7 +63,7 @@ namespace MunicipalServicesApp
             };
             Controls.Add(header);
 
-            // ===== Grid for "cards" =====
+            // ===== Grid with cards =====
             grid = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
@@ -86,18 +82,29 @@ namespace MunicipalServicesApp
                 (s, e) =>
                 {
                     using (var f = new ReportIssueForm())
-                        f.ShowDialog(this);
+                    {
+                        f.StartPosition = FormStartPosition.CenterParent;
+                        f.ShowDialog(this); // modal with owner
+                    }
                 },
                 true,
                 "Live"
             );
 
+            // UPDATED: enable and wire up Local Events & Notices
             var cardEvents = CreateNavCard(
                 "Local Events & Notices",
                 "Find municipal announcements, planned outages, public meetings, and community events.",
-                null,
-                false,
-                "Coming soon"
+                (s, e) =>
+                {
+                    using (var f = new LocalEventsForm())
+                    {
+                        f.StartPosition = FormStartPosition.CenterParent;
+                        f.ShowDialog(this); // modal with owner
+                    }
+                },
+                true,           // enabled for Part 2
+                "New"
             );
 
             var cardStatus = CreateNavCard(
@@ -117,12 +124,10 @@ namespace MunicipalServicesApp
 
         private void Header_Paint(object sender, PaintEventArgs e)
         {
-            // Light gradient background so black text is readable
             using (var lg = new LinearGradientBrush(header.ClientRectangle, Color.White, Color.LightGray, 0f))
             {
                 e.Graphics.FillRectangle(lg, header.ClientRectangle);
             }
-
             using (var pen = new Pen(Accent, 3))
             {
                 e.Graphics.DrawLine(pen, 0, header.Height - 2, header.Width, header.Height - 2);
@@ -143,7 +148,7 @@ namespace MunicipalServicesApp
             card.Paint += (s, e) =>
             {
                 var g = e.Graphics;
-                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                g.SmoothingMode = SmoothingMode.AntiAlias;
                 var rect = new Rectangle(0, 0, card.Width - 1, card.Height - 1);
                 using (var path = RoundedRect(rect, 16))
                 using (var borderPen = new Pen(Color.FromArgb(225, 228, 232), 1))
@@ -213,10 +218,7 @@ namespace MunicipalServicesApp
             desc.Width = card.Width - 32;
             cta.Location = new Point(8, 150);
 
-            card.Resize += (s, e) =>
-            {
-                desc.Width = card.Width - 32;
-            };
+            card.Resize += (s, e) => { desc.Width = card.Width - 32; };
 
             card.Controls.Add(badge);
             card.Controls.Add(lbl);
@@ -234,10 +236,10 @@ namespace MunicipalServicesApp
             return card;
         }
 
-        private static System.Drawing.Drawing2D.GraphicsPath RoundedRect(Rectangle bounds, int radius)
+        private static GraphicsPath RoundedRect(Rectangle bounds, int radius)
         {
             int d = radius * 2;
-            var path = new System.Drawing.Drawing2D.GraphicsPath();
+            var path = new GraphicsPath();
             path.AddArc(bounds.X, bounds.Y, d, d, 180, 90);
             path.AddArc(bounds.Right - d, bounds.Y, d, d, 270, 90);
             path.AddArc(bounds.Right - d, bounds.Bottom - d, d, d, 0, 90);

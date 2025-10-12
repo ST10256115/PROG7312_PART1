@@ -1,5 +1,5 @@
 ﻿using MunicipalServicesApp.Data;
-using MunicipalServicesApp.DataStructures; // <-- custom DynamicArray<T>
+using MunicipalServicesApp.DataStructures; // custom DynamicArray<T>
 using MunicipalServicesApp.Models;
 using System;
 using System.Drawing;
@@ -44,10 +44,14 @@ namespace MunicipalServicesApp
             Text = "Report an Issue";
             StartPosition = FormStartPosition.CenterParent;
 
+            // Allow ESC to act like Back
+            this.KeyPreview = true;
+            this.KeyDown += (s, e) => { if (e.KeyCode == Keys.Escape) CloseBackToOwner(); };
+
             // Populate category dropdown
             this.cboCategory.DataSource = Enum.GetValues(typeof(IssueCategory));
 
-            // Engagement / UX hint
+            // UX hint
             this.lblTip.Text = "Tip: Clear details and a photo help faster resolution.";
 
             // Default channel
@@ -184,6 +188,8 @@ namespace MunicipalServicesApp
             this.btnBack.Size = new Size(120, 36);
             this.btnBack.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             this.btnBack.Click += new EventHandler(this.btnBack_Click);
+            this.btnBack.DialogResult = DialogResult.Cancel; // allow Esc to trigger
+            this.CancelButton = this.btnBack;                // form-level Esc mapping
 
             // Add controls
             this.Controls.Add(this.lblTitle);
@@ -246,7 +252,7 @@ namespace MunicipalServicesApp
             issue.Category = (IssueCategory)this.cboCategory.SelectedItem;
             issue.Description = this.rtbDescription.Text.Trim();
 
-            // Build attachments with custom DynamicArray<string>
+            // Attachments -> DynamicArray<string>
             var attachments = new DynamicArray<string>();
             for (int i = 0; i < this.lstFiles.Items.Count; i++)
             {
@@ -276,7 +282,7 @@ namespace MunicipalServicesApp
             string saveDir = Path.Combine(Directory.GetCurrentDirectory(), "Attachments", issue.Id.ToString());
             Directory.CreateDirectory(saveDir);
 
-            foreach (string file in issue.Attachments) // IEnumerable<T> supported
+            foreach (string file in issue.Attachments)
             {
                 try
                 {
@@ -325,6 +331,12 @@ namespace MunicipalServicesApp
 
         private void btnBack_Click(object sender, EventArgs e)
         {
+            CloseBackToOwner();
+        }
+
+        private void CloseBackToOwner()
+        {
+            if (this.Owner != null && !this.Owner.Visible) this.Owner.Show();
             this.Close();
         }
     }
