@@ -1,64 +1,185 @@
-#  Municipal Services App — Windows Forms (.NET Framework)
+# Municipal Services App — Windows Forms (.NET Framework)
 
-## Overview
-The **Municipal Services App** is developed as part of the **INSY7314 PoE Project** to enhance municipal service delivery and citizen engagement through technology.  
-It allows users to **report local issues**, **view municipal events and notices**, and eventually **track service requests**.  
-The system demonstrates practical use of **custom-built data structures** within a professional, interactive Windows Forms environment.
-
-This project fulfills **Part 1** (application development and engagement strategies) and **Part 2** (enhanced data structures and event management).
+> A desktop application that helps residents report municipal issues, browse local events & announcements, and track service request status.  
+> Built with **C# (WinForms)** using **custom data structures** (DynamicArray, HashTable, Queue/Stack, PriorityQueue/Heap, BinaryTree, **AVL Tree**, Graph + **MST**), persisted to JSON.
 
 ---
 
-## Features Overview
+## Demo Video
 
-### Part 1 – Issue Reporting Module
-- **Report Issues**: Submit problems such as water leaks, road damage, power outages, etc.  
-- **Attachments**: Upload images or documents to support reports.  
-- **Preferred Contact Channels**: In-App, SMS, or WhatsApp.  
-- **Confirmation Feedback**: Progress bar, success messages, and reference ID display.  
-- **Data Persistence**: All submissions saved in `issues.json` for record-keeping.  
-
-### Part 2 – Local Events & Announcements
-- **Event Listing & Search**: Displays upcoming community meetings, maintenance notices, and outages.  
-- **Category Filtering**: Filter events by type (Utilities, Safety, Roads, etc.).  
-- **Date Range Search**: Find events within custom date ranges.  
-- **Engagement Tracker**: Uses custom stacks and queues to record user searches.  
-- **Recommendations**: Suggests top-searched event categories using hash-based frequency counts.  
-- **Data Persistence**: `events.json` file stores pre-seeded and dynamically loaded event data.  
+**YouTube:** <ADD-YOUR-LINK-HERE>
 
 ---
 
-## Technical Implementation
+## What this project does
 
-### Custom Data Structures Used
-All data structures were **custom-built** (no generics or built-in collections):
+- **Report Issues**  
+  Log a service problem (location, category, description), attach files, and choose a contact channel (In-App/SMS/WhatsApp). Generates a **unique reference ID** and saves to `issues.json`.
 
-| Data Structure | Class | Usage |
-|----------------|--------|--------|
-| **DynamicArray\<T\>** | `DynamicArray.cs` | Stores lists of issues or events dynamically. |
-| **HashTable\<K,V\>** | `HashTable.cs` | Indexes events by category and tracks search frequencies. |
-| **CustomStack\<T\>** | `CustomStack.cs` | Keeps a recent search history for recommendations. |
-| **CustomQueue\<T\>** | `CustomQueue.cs` | Maintains queued search terms for background processing. |
-| **PriorityQueue\<T\>** | `PriorityQueue.cs` | Orders events chronologically (soonest first). |
-| **CustomSet\<T\>** | `CustomSet.cs` | Stores unique event categories without duplicates. |
+- **Local Events & Announcements**  
+  Browse/search for municipal notices and events by text, category, and date range. Shows **suggested categories** based on your recent searches.
 
-All structures were implemented manually to demonstrate algorithmic understanding (resizing arrays, handling collisions, and ensuring O(1)–O(log n) average operations).
+- **Service Request Status**  
+  Find a request by reference, view the **status timeline**, see the **department route**, show **Top-K oldest open issues** (heap), and compute a **Minimum Spanning Tree (MST)** over open-issue locations.  
+  Also includes an **AVL in-order view** to demonstrate balanced-tree indexing by `CreatedAt`.
 
 ---
 
-## Application Structure
+## Architecture (high level)
 
-| Folder | Contents |
-|---------|-----------|
-| **/DataStructures** | Custom-built data structures for arrays, stacks, queues, etc. |
-| **/Data** | `IssueStore.cs` and `EventStore.cs` manage JSON data handling and indexing. |
-| **/Models** | Domain models: `Issue.cs` and `EventItem.cs`. |
-| **/Forms** | `MainForm.cs`, `ReportIssueForm.cs`, and `LocalEventsForm.cs`. |
-| **issues.json** | User-submitted issue records. |
-| **events.json** | Municipal events and notices (seeded data). |
-| **Attachments/** | Uploaded files organized by issue ID. |
+MunicipalServicesApp/
+├── DataStructures/
+│ ├── DynamicArray.cs # custom resizable array
+│ ├── CustomQueue.cs # FIFO queue
+│ ├── CustomStack.cs # LIFO stack
+│ ├── HashTable.cs # key → value map
+│ ├── PriorityQueue.cs # binary heap
+│ ├── MinHeap.cs # heap primitive
+│ ├── BinaryTree.cs # ordered tree + traversals
+│ ├── AvlTree.cs # self-balancing BST (CreatedAt index)
+│ └── Graph.cs # BFS + utilities
+├── Data/
+│ ├── IssueStore.cs # JSON persistence for issues
+│ ├── IssuePriorityQueue.cs # Top-K oldest open issues (heap)
+│ ├── IssueAvlIndex.cs # AVL index by CreatedAt
+│ ├── EventStore.cs # events, search, recommendations
+│ ├── DepartmentNetwork.cs # department route (graph)
+│ ├── LocationNetwork.cs # coordinates + MST
+│ └── StatusIndex.cs # per-issue status timeline (BinaryTree)
+├── Models/
+│ ├── Issue.cs, EventItem.cs, IssueStatus.cs, StatusNode.cs
+├── Forms/
+│ ├── MainForm.cs # menu with “cards”
+│ ├── ReportIssueForm.cs
+│ ├── LocalEventsForm.cs
+│ └── ServiceRequestStatusForm.cs
+├── issues.json # created at runtime
+├── events.json # seeded / created at runtime
+└── App.config, Program.cs, packages.config
+
 
 ---
 
-git clone <your-repo-url>
+## Prerequisites
+
+- **Windows + Visual Studio 2019/2022**
+- **.NET Framework 4.7.2 or 4.8** (WinForms)
+- **NuGet** package: `Newtonsoft.Json`
+
+> Install the package in Visual Studio:  
+> `Project` → **Manage NuGet Packages** → **Browse** → `Newtonsoft.Json` → **Install**.
+
+---
+
+## How to clone
+
+```bash
+git clone <YOUR-REPO-URL>
 cd MunicipalServicesApp
+Open the solution in Visual Studio:
+
+MunicipalServicesApp.sln
+
+## Prerequisites
+
+- Windows with **Visual Studio 2019/2022** installed  
+- **.NET Framework** targeting pack: **4.7.2** or **4.8**  
+- NuGet package: **Newtonsoft.Json** (Json.NET)
+
+> Install via Package Manager Console (if needed):  
+> `Install-Package Newtonsoft.Json`
+
+---
+
+## How to Build & Run
+
+1. **Open** the solution in **Visual Studio**.  
+2. **Target Framework**: set to **.NET Framework 4.7.2 or 4.8**  
+   - `Project → Properties → Application → Target framework`
+3. **Dependencies**: confirm **Newtonsoft.Json** is installed (see prerequisites).
+4. **Build**: `Build → Build Solution` (or **Ctrl+Shift+B**).  
+5. **Run**: `Debug → Start Debugging` (or **F5**).
+
+**On launch**, the Main Menu appears with three cards:
+
+- **Report an Issue** *(Live)*
+- **Local Events & Notices** *(Live)*
+- **Service Request Status** *(Live)*
+
+---
+
+## Using the App
+
+### Report Issues
+- Enter **Location**, pick a **Category**, and add a **Description**.  
+- Optional: click **Attach Images/Documents…** to add files.  
+- Choose a contact channel (**In-App/SMS/WhatsApp**) and a **phone number** if needed.  
+- Click **Submit** → a **progress bar** shows submission; a **message box** confirms your **Reference ID**.  
+- Attachments are copied to: `./Attachments/<IssueId>/` *(demo)*.
+
+### Local Events & Announcements
+- **Search** by text, **filter** by category, and optionally pick **From/To** dates.  
+- **Suggested** shows top categories from your **recent searches**.  
+- Data is **seeded** into `events.json` on first run.
+
+### Service Request Status
+- Enter a **Reference ID (GUID)** to locate a request.  
+- View **Status Timeline**, **Department Route**, and **Advance Status** suggestions.  
+- **Top-K** oldest open issues (choose **K** and click **Top-K**).  
+- **Compute MST** to see total connection length and edges.  
+- **AVL (in-order)** shows the first **N** issues in ascending `CreatedAt` using the AVL index (**N = Top-K value**).
+
+---
+
+## Data Structures & Algorithms (for examiners)
+
+- `DynamicArray` – core resizable storage for issues/attachments.  
+- `HashTable` – **category → event list** mapping for fast lookup.  
+- `CustomQueue` / `CustomStack` – capture search history & recency.  
+- `PriorityQueue` / `MinHeap` – efficient **Top-K** oldest open issues.  
+- `BinaryTree` – timeline storage + **in-order traversal** for per-issue history.  
+- `AVLTree` – global index of issues by `CreatedAt` (balanced **O(log n)** ops), surfaced via **AVL (in-order)**.  
+- **Graph + BFS** – department routing; **MST** over open-issue location graph.
+
+> All structures are **custom-built** (no `List<T>`, `Dictionary<TKey,TValue>`, etc. in rubric-critical areas).
+
+---
+
+## Data Files
+
+- `issues.json` – created/updated at runtime.  
+- `events.json` – seeded on first run.  
+- `Attachments/<IssueId>/` – demo copy of user attachments.
+
+**Resetting data:** close the app and delete `issues.json` (and the `Attachments/` folder) to start fresh.
+
+---
+
+## Keyboard & UX Tips
+
+- **Esc** closes child forms.  
+- Tooltips describe disabled features (where applicable).  
+- Buttons use hover states; UI palette is consistent (municipal-branded).
+
+---
+
+## Troubleshooting
+
+- **Designer not used?** Some forms are **code-first** by design to keep custom layouts clean.  
+- **`Newtonsoft.Json` not found:** Ensure the package is installed **for this project** (not just the solution).  
+- **Old JSON incompatible:** Delete `issues.json` if you change model shapes during development.  
+- **Reference not found:** Ensure you pasted the exact **GUID** from the submission confirmation.
+
+---
+
+## Academic Notes
+
+- Project implements and demonstrates: **Trees (Binary/AVL), Heaps, Graphs, BFS, MST, Stacks/Queues, HashTable, Set**.  
+- The **Status** module explicitly surfaces **Top-K (heap)** and **AVL in-order** for verifiable algorithmic behaviour.  
+- Code is **C# 7.3** compatible (WinForms, .NET Framework 4.7.2/4.8) with **separation of concerns**.
+
+---
+
+## License / AI Usage
+
+- Add a license file if required (e.g., **MIT**).  
