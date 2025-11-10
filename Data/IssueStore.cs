@@ -24,6 +24,8 @@ namespace MunicipalServicesApp.Data
         public static void Add(Issue issue)
         {
             _issues.Add(issue);
+            // keep AVL index in sync
+            IssueAvlIndex.Add(issue);
             Save();
         }
 
@@ -34,7 +36,11 @@ namespace MunicipalServicesApp.Data
             var result = new DynamicArray<Issue>();
 
             if (!File.Exists(DbPath))
+            {
+                // Even if empty, ensure AVL index is initialized
+                IssueAvlIndex.Rebuild(result.ToArray());
                 return result;
+            }
 
             try
             {
@@ -42,7 +48,11 @@ namespace MunicipalServicesApp.Data
 
                 // Deserialize to DTOs that use arrays (JSON-friendly)
                 var dtos = JsonConvert.DeserializeObject<IssueDto[]>(json);
-                if (dtos == null) return result;
+                if (dtos == null)
+                {
+                    IssueAvlIndex.Rebuild(result.ToArray());
+                    return result;
+                }
 
                 for (int i = 0; i < dtos.Length; i++)
                 {
@@ -80,6 +90,8 @@ namespace MunicipalServicesApp.Data
                 // (You can delete issues.json to reset.)
             }
 
+            // Build AVL index from loaded data
+            IssueAvlIndex.Rebuild(result.ToArray());
             return result;
         }
 

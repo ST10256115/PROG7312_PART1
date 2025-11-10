@@ -1,7 +1,8 @@
 ﻿using MunicipalServicesApp.Data;
-using MunicipalServicesApp.DataStructures; // custom DynamicArray<T>
+using MunicipalServicesApp.DataStructures; // DynamicArray<T>
 using MunicipalServicesApp.Models;
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Threading.Tasks;
@@ -9,28 +10,37 @@ using System.Windows.Forms;
 
 namespace MunicipalServicesApp
 {
-    public class ReportIssueForm : Form
+    public partial class ReportIssueForm : Form
     {
+        // Theme
+        private static readonly Color Primary = Color.FromArgb(0, 102, 84);
+        private static readonly Color PrimaryDark = Color.FromArgb(0, 82, 68);
+        private static readonly Color TextBody = Color.FromArgb(33, 37, 41);
+        private static readonly Color TextMuted = Color.FromArgb(73, 80, 87);
+
         private Label lblTitle;
 
         private Label lblLocation;
         private TextBox txtLocation;
-
         private Label lblCategory;
         private ComboBox cboCategory;
 
         private Label lblDescription;
         private RichTextBox rtbDescription;
+        private Label lblCount; // character counter
 
         private Label lblAttachments;
         private ListBox lstFiles;
         private Button btnAttach;
+        private Button btnOpen;
+        private Button btnRemove;
 
         private GroupBox grpContact;
         private RadioButton rbInApp;
         private RadioButton rbSMS;
         private RadioButton rbWhatsApp;
         private TextBox txtPhone;
+        private Label lblPhone;
 
         private ProgressBar pbSubmit;
         private Label lblTip;
@@ -40,174 +50,233 @@ namespace MunicipalServicesApp
 
         public ReportIssueForm()
         {
-            InitializeComponent();
+            BuildUI();
+
             Text = "Report an Issue";
             StartPosition = FormStartPosition.CenterParent;
-
-            // Allow ESC to act like Back
-            this.KeyPreview = true;
-            this.KeyDown += (s, e) => { if (e.KeyCode == Keys.Escape) CloseBackToOwner(); };
+            KeyPreview = true;
+            KeyDown += (s, e) => { if (e.KeyCode == Keys.Escape) Close(); };
 
             // Populate category dropdown
-            this.cboCategory.DataSource = Enum.GetValues(typeof(IssueCategory));
+            cboCategory.DataSource = Enum.GetValues(typeof(IssueCategory));
 
-            // UX hint
-            this.lblTip.Text = "Tip: Clear details and a photo help faster resolution.";
+            // Engagement / UX hint
+            lblTip.Text = "Tip: clear details + a photo help faster resolution.";
 
             // Default channel
-            this.rbInApp.Checked = true;
+            rbInApp.Checked = true;
         }
 
-        private void InitializeComponent()
+        private void BuildUI()
         {
-            this.lblTitle = new Label();
+            // Form canvas
+            ClientSize = new Size(900, 640);
+            BackColor = Color.White;
 
-            this.lblLocation = new Label();
-            this.txtLocation = new TextBox();
+            lblTitle = new Label
+            {
+                AutoSize = true,
+                Font = new Font("Segoe UI Semibold", 16f, FontStyle.Bold),
+                ForeColor = TextBody,
+                Text = "Report a Municipal Issue",
+                Location = new Point(20, 18)
+            };
 
-            this.lblCategory = new Label();
-            this.cboCategory = new ComboBox();
+            // === Row 1: Location & Category ===
+            lblLocation = new Label
+            {
+                AutoSize = true,
+                Text = "• Location (required)",
+                ForeColor = TextBody,
+                Location = new Point(20, 66)
+            };
+            txtLocation = new TextBox { Location = new Point(24, 88), Width = 370, TabIndex = 0 };
 
-            this.lblDescription = new Label();
-            this.rtbDescription = new RichTextBox();
+            lblCategory = new Label
+            {
+                AutoSize = true,
+                Text = "• Category (required)",
+                ForeColor = TextBody,
+                Location = new Point(412, 66)
+            };
+            cboCategory = new ComboBox
+            {
+                Location = new Point(416, 88),
+                Width = 240,
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                TabIndex = 1
+            };
 
-            this.lblAttachments = new Label();
-            this.lstFiles = new ListBox();
-            this.btnAttach = new Button();
+            // === Row 2: Description with counter ===
+            lblDescription = new Label
+            {
+                AutoSize = true,
+                Text = "• Description (required)",
+                ForeColor = TextBody,
+                Location = new Point(20, 128)
+            };
+            rtbDescription = new RichTextBox
+            {
+                Location = new Point(24, 150),
+                Size = new Size(632, 150),
+                DetectUrls = false,
+                TabIndex = 2
+            };
+            lblCount = new Label
+            {
+                AutoSize = true,
+                ForeColor = TextMuted,
+                Location = new Point(24, 305),
+                Text = "0 characters"
+            };
+            rtbDescription.TextChanged += (s, e) =>
+            {
+                int len = rtbDescription.Text.Length;
+                lblCount.Text = len + " character" + (len == 1 ? "" : "s");
+            };
 
-            this.grpContact = new GroupBox();
-            this.rbInApp = new RadioButton();
-            this.rbSMS = new RadioButton();
-            this.rbWhatsApp = new RadioButton();
-            this.txtPhone = new TextBox();
+            // === Row 3: Attachments ===
+            lblAttachments = new Label
+            {
+                AutoSize = true,
+                Text = "Attachments (optional)",
+                ForeColor = TextBody,
+                Location = new Point(20, 332)
+            };
 
-            this.pbSubmit = new ProgressBar();
-            this.lblTip = new Label();
+            lstFiles = new ListBox
+            {
+                Location = new Point(24, 354),
+                Size = new Size(632, 96),
+                IntegralHeight = false,
+                TabIndex = 3
+            };
 
-            this.btnSubmit = new Button();
-            this.btnBack = new Button();
+            btnAttach = new Button
+            {
+                Text = "Add…",
+                Location = new Point(24, 456),
+                Size = new Size(80, 32),
+                BackColor = Primary,
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                TabIndex = 4
+            };
+            btnAttach.FlatAppearance.BorderSize = 0;
+            btnAttach.MouseEnter += (s, e) => btnAttach.BackColor = PrimaryDark;
+            btnAttach.MouseLeave += (s, e) => btnAttach.BackColor = Primary;
+            btnAttach.Click += btnAttach_Click;
 
-            // Form
-            this.ClientSize = new Size(760, 560);
+            btnOpen = new Button
+            {
+                Text = "Open",
+                Location = new Point(110, 456),
+                Size = new Size(80, 32),
+                FlatStyle = FlatStyle.Flat,
+                TabIndex = 5
+            };
+            btnOpen.Click += (s, e) => OpenSelectedAttachment();
 
-            // Title
-            this.lblTitle.AutoSize = true;
-            this.lblTitle.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
-            this.lblTitle.Text = "Report Issues";
-            this.lblTitle.Location = new Point(20, 15);
+            btnRemove = new Button
+            {
+                Text = "Remove",
+                Location = new Point(196, 456),
+                Size = new Size(90, 32),
+                FlatStyle = FlatStyle.Flat,
+                TabIndex = 6
+            };
+            btnRemove.Click += (s, e) => RemoveSelectedAttachment();
 
-            // Location
-            this.lblLocation.AutoSize = true;
-            this.lblLocation.Text = "Location:";
-            this.lblLocation.Location = new Point(20, 60);
+            // === Row 4: Contact preference ===
+            grpContact = new GroupBox
+            {
+                Text = "Preferred Contact Channel",
+                Location = new Point(672, 150),
+                Size = new Size(206, 170)
+            };
+            rbInApp = new RadioButton { Text = "In-App", Location = new Point(16, 28), AutoSize = true, TabIndex = 7 };
+            rbSMS = new RadioButton { Text = "SMS", Location = new Point(16, 54), AutoSize = true, TabIndex = 8 };
+            rbWhatsApp = new RadioButton { Text = "WhatsApp", Location = new Point(16, 80), AutoSize = true, TabIndex = 9 };
 
-            this.txtLocation.Location = new Point(100, 56);
-            this.txtLocation.Size = new Size(300, 24);
-            this.txtLocation.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            lblPhone = new Label { AutoSize = true, Text = "Phone (for SMS/WhatsApp):", Location = new Point(16, 106) };
+            txtPhone = new TextBox { Location = new Point(16, 126), Width = 170, TabIndex = 10 };
 
-            // Category
-            this.lblCategory.AutoSize = true;
-            this.lblCategory.Text = "Category:";
-            this.lblCategory.Location = new Point(420, 60);
+            grpContact.Controls.Add(rbInApp);
+            grpContact.Controls.Add(rbSMS);
+            grpContact.Controls.Add(rbWhatsApp);
+            grpContact.Controls.Add(lblPhone);
+            grpContact.Controls.Add(txtPhone);
 
-            this.cboCategory.DropDownStyle = ComboBoxStyle.DropDownList;
-            this.cboCategory.Location = new Point(490, 56);
-            this.cboCategory.Size = new Size(240, 24);
-            this.cboCategory.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            // === Footer: progress + actions ===
+            pbSubmit = new ProgressBar
+            {
+                Location = new Point(24, 510),
+                Size = new Size(632, 16),
+                Visible = false
+            };
 
-            // Description
-            this.lblDescription.AutoSize = true;
-            this.lblDescription.Text = "Description:";
-            this.lblDescription.Location = new Point(20, 100);
+            lblTip = new Label
+            {
+                AutoSize = true,
+                ForeColor = TextMuted,
+                Location = new Point(24, 532),
+                Text = ""
+            };
 
-            this.rtbDescription.Location = new Point(23, 120);
-            this.rtbDescription.Size = new Size(707, 140);
-            this.rtbDescription.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            btnSubmit = new Button
+            {
+                Text = "Submit",
+                Location = new Point(760, 568),
+                Size = new Size(118, 38),
+                BackColor = Primary,
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                TabIndex = 11
+            };
+            btnSubmit.FlatAppearance.BorderSize = 0;
+            btnSubmit.MouseEnter += (s, e) => btnSubmit.BackColor = PrimaryDark;
+            btnSubmit.MouseLeave += (s, e) => btnSubmit.BackColor = Primary;
+            btnSubmit.Click += btnSubmit_Click;
+            this.AcceptButton = btnSubmit; // Enter submits
 
-            // Attachments
-            this.lblAttachments.AutoSize = true;
-            this.lblAttachments.Text = "Attachments:";
-            this.lblAttachments.Location = new Point(20, 270);
-
-            this.lstFiles.Location = new Point(23, 290);
-            this.lstFiles.Size = new Size(600, 95);
-            this.lstFiles.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-
-            this.btnAttach.Text = "Attach Images/Documents…";
-            this.btnAttach.Location = new Point(630, 290);
-            this.btnAttach.Size = new Size(100, 60);
-            this.btnAttach.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            this.btnAttach.Click += new EventHandler(this.btnAttach_Click);
-
-            // Contact group
-            this.grpContact.Text = "Preferred Contact Channel";
-            this.grpContact.Location = new Point(23, 395);
-            this.grpContact.Size = new Size(450, 90);
-
-            this.rbInApp.Text = "In-App";
-            this.rbInApp.Location = new Point(15, 25);
-
-            this.rbSMS.Text = "SMS";
-            this.rbSMS.Location = new Point(100, 25);
-
-            this.rbWhatsApp.Text = "WhatsApp";
-            this.rbWhatsApp.Location = new Point(160, 25);
-
-            this.txtPhone.Location = new Point(15, 55);
-            this.txtPhone.Size = new Size(410, 24);
-            this.txtPhone.Text = "";
-            var lblPhone = new Label();
-            lblPhone.Text = "Phone (for SMS/WhatsApp):";
-            lblPhone.Location = new Point(15, 40);
-            lblPhone.AutoSize = true;
-
-            this.grpContact.Controls.Add(this.rbInApp);
-            this.grpContact.Controls.Add(this.rbSMS);
-            this.grpContact.Controls.Add(this.rbWhatsApp);
-            this.grpContact.Controls.Add(lblPhone);
-            this.grpContact.Controls.Add(this.txtPhone);
-
-            // Progress + tip
-            this.pbSubmit.Location = new Point(23, 495);
-            this.pbSubmit.Size = new Size(450, 18);
-            this.pbSubmit.Visible = false;
-
-            this.lblTip.AutoSize = true;
-            this.lblTip.Location = new Point(23, 520);
-            this.lblTip.Size = new Size(400, 18);
-
-            // Buttons
-            this.btnSubmit.Text = "Submit";
-            this.btnSubmit.Location = new Point(610, 485);
-            this.btnSubmit.Size = new Size(120, 36);
-            this.btnSubmit.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            this.btnSubmit.Click += new EventHandler(this.btnSubmit_Click);
-
-            this.btnBack.Text = "Back to Main Menu";
-            this.btnBack.Location = new Point(480, 485);
-            this.btnBack.Size = new Size(120, 36);
-            this.btnBack.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            this.btnBack.Click += new EventHandler(this.btnBack_Click);
-            this.btnBack.DialogResult = DialogResult.Cancel; // allow Esc to trigger
-            this.CancelButton = this.btnBack;                // form-level Esc mapping
+            btnBack = new Button
+            {
+                Text = "Back",
+                Location = new Point(670, 568),
+                Size = new Size(80, 38),
+                FlatStyle = FlatStyle.Flat,
+                TabIndex = 12
+            };
+            btnBack.Click += (s, e) => Close();
+            this.CancelButton = btnBack; // Esc back
 
             // Add controls
-            this.Controls.Add(this.lblTitle);
-            this.Controls.Add(this.lblLocation);
-            this.Controls.Add(this.txtLocation);
-            this.Controls.Add(this.lblCategory);
-            this.Controls.Add(this.cboCategory);
-            this.Controls.Add(this.lblDescription);
-            this.Controls.Add(this.rtbDescription);
-            this.Controls.Add(this.lblAttachments);
-            this.Controls.Add(this.lstFiles);
-            this.Controls.Add(this.btnAttach);
-            this.Controls.Add(this.grpContact);
-            this.Controls.Add(this.pbSubmit);
-            this.Controls.Add(this.lblTip);
-            this.Controls.Add(this.btnSubmit);
-            this.Controls.Add(this.btnBack);
+            Controls.Add(lblTitle);
+
+            Controls.Add(lblLocation);
+            Controls.Add(txtLocation);
+            Controls.Add(lblCategory);
+            Controls.Add(cboCategory);
+
+            Controls.Add(lblDescription);
+            Controls.Add(rtbDescription);
+            Controls.Add(lblCount);
+
+            Controls.Add(lblAttachments);
+            Controls.Add(lstFiles);
+            Controls.Add(btnAttach);
+            Controls.Add(btnOpen);
+            Controls.Add(btnRemove);
+
+            Controls.Add(grpContact);
+
+            Controls.Add(pbSubmit);
+            Controls.Add(lblTip);
+            Controls.Add(btnBack);
+            Controls.Add(btnSubmit);
         }
+
+        // ================== Actions ==================
 
         private void btnAttach_Click(object sender, EventArgs e)
         {
@@ -221,123 +290,135 @@ namespace MunicipalServicesApp
                 {
                     for (int i = 0; i < dlg.FileNames.Length; i++)
                     {
-                        this.lstFiles.Items.Add(dlg.FileNames[i]);
+                        var path = dlg.FileNames[i];
+                        if (!lstFiles.Items.Contains(path))
+                            lstFiles.Items.Add(path);
                     }
-                    this.lblTip.Text = "Nice! Attachments added.";
+                    lblTip.Text = "Nice! Attachments added.";
                 }
             }
         }
 
+        private void OpenSelectedAttachment()
+        {
+            if (lstFiles.SelectedItem == null) return;
+            try
+            {
+                var path = lstFiles.SelectedItem.ToString();
+                if (File.Exists(path))
+                    Process.Start(path);
+                else
+                    MessageBox.Show("File not found on disk.", "Open Attachment",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch { /* noop */ }
+        }
+
+        private void RemoveSelectedAttachment()
+        {
+            if (lstFiles.SelectedItem == null) return;
+            int idx = lstFiles.SelectedIndex;
+            lstFiles.Items.RemoveAt(idx);
+            lblTip.Text = "Attachment removed.";
+        }
+
         private async void btnSubmit_Click(object sender, EventArgs e)
         {
-            // Validation
-            if (string.IsNullOrWhiteSpace(this.txtLocation.Text))
+            // Inline validation with focus guidance
+            if (string.IsNullOrWhiteSpace(txtLocation.Text))
             {
                 MessageBox.Show("Please enter a location.", "Validation",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                this.txtLocation.Focus();
-                return;
+                txtLocation.Focus(); return;
             }
-            if (string.IsNullOrWhiteSpace(this.rtbDescription.Text))
+            if (cboCategory.SelectedItem == null)
+            {
+                MessageBox.Show("Please select a category.", "Validation",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                cboCategory.DroppedDown = true; return;
+            }
+            if (string.IsNullOrWhiteSpace(rtbDescription.Text))
             {
                 MessageBox.Show("Please describe the issue.", "Validation",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                this.rtbDescription.Focus();
-                return;
+                rtbDescription.Focus(); return;
+            }
+            if ((rbSMS.Checked || rbWhatsApp.Checked) && string.IsNullOrWhiteSpace(txtPhone.Text))
+            {
+                MessageBox.Show("Phone number required for SMS/WhatsApp.", "Validation",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtPhone.Focus(); return;
             }
 
             // Build model
             var issue = new Issue();
-            issue.Location = this.txtLocation.Text.Trim();
-            issue.Category = (IssueCategory)this.cboCategory.SelectedItem;
-            issue.Description = this.rtbDescription.Text.Trim();
+            issue.Location = txtLocation.Text.Trim();
+            issue.Category = (IssueCategory)cboCategory.SelectedItem;
+            issue.Description = rtbDescription.Text.Trim();
 
             // Attachments -> DynamicArray<string>
             var attachments = new DynamicArray<string>();
-            for (int i = 0; i < this.lstFiles.Items.Count; i++)
+            for (int i = 0; i < lstFiles.Items.Count; i++)
             {
-                object obj = this.lstFiles.Items[i];
-                if (obj != null)
-                {
-                    string path = obj.ToString();
-                    if (!string.IsNullOrEmpty(path))
-                    {
-                        attachments.Add(path);
-                    }
-                }
+                string p = lstFiles.Items[i].ToString();
+                if (!string.IsNullOrEmpty(p)) attachments.Add(p);
             }
             issue.Attachments = attachments;
 
             // Channel & phone
             issue.PreferredChannel =
-                this.rbSMS.Checked ? ContactChannel.SMS :
-                (this.rbWhatsApp.Checked ? ContactChannel.WhatsApp : ContactChannel.InApp);
-            issue.PhoneNumber = this.txtPhone.Text.Trim();
+                rbSMS.Checked ? ContactChannel.SMS :
+                (rbWhatsApp.Checked ? ContactChannel.WhatsApp : ContactChannel.InApp);
+            issue.PhoneNumber = txtPhone.Text.Trim();
 
-            // Progress
-            this.pbSubmit.Visible = true; this.pbSubmit.Value = 10;
-            this.lblTip.Text = "Submitting… please wait.";
+            // Progress feedback
+            pbSubmit.Visible = true; pbSubmit.Value = 10;
+            lblTip.Text = "Submitting… please wait.";
 
-            // Copy attachments into app folder (demo only)
+            // Copy attachments to local folder (demo)
             string saveDir = Path.Combine(Directory.GetCurrentDirectory(), "Attachments", issue.Id.ToString());
             Directory.CreateDirectory(saveDir);
-
             foreach (string file in issue.Attachments)
             {
                 try
                 {
-                    string fileName = Path.GetFileName(file);
-                    if (!string.IsNullOrEmpty(fileName))
+                    string name = Path.GetFileName(file);
+                    if (!string.IsNullOrEmpty(name))
                     {
-                        string dest = Path.Combine(saveDir, fileName);
+                        string dest = Path.Combine(saveDir, name);
                         if (File.Exists(file)) File.Copy(file, dest, true);
                     }
                 }
-                catch
-                {
-                    // ignore copy errors for demo
-                }
+                catch { /* ignore copy errors in demo */ }
             }
-            this.pbSubmit.Value = 60;
+            pbSubmit.Value = 60;
 
-            await Task.Delay(400); // small UX pause
+            await Task.Delay(300); // tiny UX pause
 
             IssueStore.Add(issue);
-            this.pbSubmit.Value = 100;
+            pbSubmit.Value = 100;
 
             MessageBox.Show(
-                "Thank you! Your report has been logged."
-                + Environment.NewLine + Environment.NewLine
-                + "Reference: " + issue.Id
-                + Environment.NewLine
+                "Thank you! Your report has been logged.\n\n"
+                + "Reference: " + issue.Id + "\n"
                 + "Channel: " + issue.PreferredChannel,
                 "Report Submitted",
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-            this.lblTip.Text = "Report captured. You can submit another or go back to main menu.";
-            this.pbSubmit.Visible = false;
+            lblTip.Text = "Report captured. You can submit another or go back to the main menu.";
+            pbSubmit.Visible = false;
             ClearForm();
         }
 
         private void ClearForm()
         {
-            this.txtLocation.Clear();
-            if (this.cboCategory.Items.Count > 0) this.cboCategory.SelectedIndex = 0;
-            this.rtbDescription.Clear();
-            this.lstFiles.Items.Clear();
-            this.rbInApp.Checked = true;
-            this.txtPhone.Clear();
-        }
-
-        private void btnBack_Click(object sender, EventArgs e)
-        {
-            CloseBackToOwner();
-        }
-
-        private void CloseBackToOwner()
-        {
-            if (this.Owner != null && !this.Owner.Visible) this.Owner.Show();
-            this.Close();
+            txtLocation.Clear();
+            if (cboCategory.Items.Count > 0) cboCategory.SelectedIndex = 0;
+            rtbDescription.Clear();
+            lstFiles.Items.Clear();
+            rbInApp.Checked = true;
+            txtPhone.Clear();
+            rtbDescription.Focus();
         }
     }
 }
