@@ -171,4 +171,4 @@ MunicipalServicesApp/
  - Code is C# 7.3 compatible (WinForms, .NET Framework 4.7.2/4.8) with separation of concerns.
 
 ## License / AI Usage
-Add a license file if required (e.g., MIT).
+MIT License
