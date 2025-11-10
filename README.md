@@ -1,64 +1,64 @@
-# Municipal Services App – Windows Forms (.NET Framework)
+#  Municipal Services App — Windows Forms (.NET Framework)
 
-##  Overview
-This application is part of the PoE project to improve municipal service delivery in South Africa.  
-It demonstrates core functionality for **Task 2: Application Development**.  
+## Overview
+The **Municipal Services App** is developed as part of the **INSY7314 PoE Project** to enhance municipal service delivery and citizen engagement through technology.  
+It allows users to **report local issues**, **view municipal events and notices**, and eventually **track service requests**.  
+The system demonstrates practical use of **custom-built data structures** within a professional, interactive Windows Forms environment.
 
-The app provides a **Main Menu** with three options:  
-- **Report Issues** (Implemented)  
-- **Local Events & Announcements** (Coming Soon – disabled)  
-- **Service Request Status** (Coming Soon – disabled)  
+This project fulfills **Part 1** (application development and engagement strategies) and **Part 2** (enhanced data structures and event management).
 
 ---
 
-##  Video Demonstration
--Watch the demo of the application here:  
--[YouTube Demo](https://youtu.be/K-z8puO7mnc)  
+## Features Overview
 
-##  How to Clone the Repository
+### Part 1 – Issue Reporting Module
+- **Report Issues**: Submit problems such as water leaks, road damage, power outages, etc.  
+- **Attachments**: Upload images or documents to support reports.  
+- **Preferred Contact Channels**: In-App, SMS, or WhatsApp.  
+- **Confirmation Feedback**: Progress bar, success messages, and reference ID display.  
+- **Data Persistence**: All submissions saved in `issues.json` for record-keeping.  
+
+### Part 2 – Local Events & Announcements
+- **Event Listing & Search**: Displays upcoming community meetings, maintenance notices, and outages.  
+- **Category Filtering**: Filter events by type (Utilities, Safety, Roads, etc.).  
+- **Date Range Search**: Find events within custom date ranges.  
+- **Engagement Tracker**: Uses custom stacks and queues to record user searches.  
+- **Recommendations**: Suggests top-searched event categories using hash-based frequency counts.  
+- **Data Persistence**: `events.json` file stores pre-seeded and dynamically loaded event data.  
+
+---
+
+## Technical Implementation
+
+### Custom Data Structures Used
+All data structures were **custom-built** (no generics or built-in collections):
+
+| Data Structure | Class | Usage |
+|----------------|--------|--------|
+| **DynamicArray\<T\>** | `DynamicArray.cs` | Stores lists of issues or events dynamically. |
+| **HashTable\<K,V\>** | `HashTable.cs` | Indexes events by category and tracks search frequencies. |
+| **CustomStack\<T\>** | `CustomStack.cs` | Keeps a recent search history for recommendations. |
+| **CustomQueue\<T\>** | `CustomQueue.cs` | Maintains queued search terms for background processing. |
+| **PriorityQueue\<T\>** | `PriorityQueue.cs` | Orders events chronologically (soonest first). |
+| **CustomSet\<T\>** | `CustomSet.cs` | Stores unique event categories without duplicates. |
+
+All structures were implemented manually to demonstrate algorithmic understanding (resizing arrays, handling collisions, and ensuring O(1)–O(log n) average operations).
+
+---
+
+## Application Structure
+
+| Folder | Contents |
+|---------|-----------|
+| **/DataStructures** | Custom-built data structures for arrays, stacks, queues, etc. |
+| **/Data** | `IssueStore.cs` and `EventStore.cs` manage JSON data handling and indexing. |
+| **/Models** | Domain models: `Issue.cs` and `EventItem.cs`. |
+| **/Forms** | `MainForm.cs`, `ReportIssueForm.cs`, and `LocalEventsForm.cs`. |
+| **issues.json** | User-submitted issue records. |
+| **events.json** | Municipal events and notices (seeded data). |
+| **Attachments/** | Uploaded files organized by issue ID. |
+
+---
 
 git clone <your-repo-url>
 cd MunicipalServicesApp
-Replace <your-repo-url> with your GitHub repository link.
-
-- Open the cloned folder in Visual Studio 2022.
-
-- Open the solution file: MunicipalServicesApp.sln.
-
-## How to Compile
-- Ensure the project type is Windows Forms App (.NET Framework).
-- Install NuGet package: Newtonsoft.Json
-- Right-click project → Manage NuGet Packages → Browse → search Newtonsoft.Json → Install.
-- Build → Build Solution (Ctrl+Shift+B).
-
-## How to Run
-- Press F5 or click Start Debugging.
-- The Main Menu will load.
-- Click Report Issues to open the reporting form.
-
-## How to Use “Report Issues”
-- Enter a Location.
-- Select an Issue Category from the dropdown (Sanitation, Roads, Electricity, etc.).
-- Provide a Description of the problem.
-- (Optional) Attach images/documents using the Attach button.
-- Choose a Preferred Contact Channel (In-App, SMS, or WhatsApp).
-- Enter a phone number if SMS/WhatsApp is selected.
-- Click Submit.
-- A progress bar will show submission progress.
-- A confirmation message will display with a unique reference ID.
-
-## Data Handling
-- Reports are saved into a JSON file:
-- issues.json in the project’s root folder.
-- Attachments are copied to:
-- ./Attachments/<IssueId>/ for demonstration.
-- Data structure used: custom DynamicArray<Issue>, with persistence via JSON DTO mapping.
-
-## Features Implemented (Task 2 Requirements)
-- Main Menu with 3 tasks (only “Report Issues” enabled).
-- Report Issue Form with all required inputs (Location, Category, Description, File Attachment).
-- User Feedback via progress bar, tips label, and confirmation messages.
-- Engagement strategy from Task 1 integrated:
-- Contact channel options (In-App, SMS, WhatsApp).
-- Tips and progress updates to keep users informed.
-- Navigation back to main menu.
